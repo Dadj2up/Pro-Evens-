@@ -1,0 +1,503 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PRO EVENTS Organisateur</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&family=Sora:wght@600;800&display=swap">
+<style>
+/* Concept : application mobile en trois onglets (Accueil, Ventes, Scanner), bandeau bleu nuit, violet pour l'action principale, vert et rouge réservés au résultat du scan */
+:root{
+  --bg:#F5F4FB; --surface:#FFFFFF; --ink:#12163A; --muted:#575C82; --line:#DAD8EC;
+  --night:#0E1236; --on-night:#F4F3FF; --violet:#6B3FEF; --on-violet:#FFFFFF; --violet-soft:#E9E2FF;
+  --ok:#0F7B55; --ok-soft:#DDF4EA; --bad:#B3243B; --bad-soft:#FBE0E5; --warn:#9A5B00; --warn-soft:#FFEFD0;
+  --f-display:'Sora',system-ui,sans-serif; --f-body:'DM Sans',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#090C26; --surface:#111637; --ink:#ECEBFF; --muted:#A1A5CE; --line:#262C5E;
+  --night:#060820; --on-night:#F4F3FF; --violet:#9F85FF; --on-violet:#0B0B25; --violet-soft:#2A2260;
+  --ok:#5FD6A4; --ok-soft:#10382C; --bad:#FF8BA0; --bad-soft:#44141F; --warn:#F2B658; --warn-soft:#3A2B0E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#090C26; --surface:#111637; --ink:#ECEBFF; --muted:#A1A5CE; --line:#262C5E;
+  --night:#060820; --on-night:#F4F3FF; --violet:#9F85FF; --on-violet:#0B0B25; --violet-soft:#2A2260;
+  --ok:#5FD6A4; --ok-soft:#10382C; --bad:#FF8BA0; --bad-soft:#44141F; --warn:#F2B658; --warn-soft:#3A2B0E; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+.app{max-width:560px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.2;text-wrap:balance}
+h2{font-size:1.25rem;margin:24px 0 10px}
+p{margin:0}
+.muted{color:var(--muted)}
+.bar{background:var(--night);color:var(--on-night);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));
+  padding:18px max(16px,env(safe-area-inset-left,0px)) 18px}
+.bar>div{max-width:560px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font:800 1.05rem var(--f-display);letter-spacing:.02em}
+.brand span{color:#B9A8FF}
+.evt{font-size:.85rem;color:#CFCFF0;margin-top:2px}
+.demo{font:700 .68rem var(--f-mono);letter-spacing:.1em;background:#B9A8FF;color:#0E1236;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.banner{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:.86rem;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.stat b{display:block;font:800 1.9rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:.82rem;color:var(--muted)}
+.stat.hi b{color:var(--violet)}
+.progress{height:14px;border-radius:7px;background:var(--bg);border:1px solid var(--line);overflow:hidden;display:flex;margin-top:12px}
+.progress i{display:block;height:100%}
+.p-used{background:var(--violet)}.p-sold{background:var(--violet-soft)}
+.pl{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.8rem;color:var(--muted);margin-top:8px}
+.pl b{color:var(--ink)}
+button,.btn{font:700 1rem var(--f-body);background:var(--violet);color:var(--on-violet);border:0;border-radius:10px;padding:14px 18px;min-height:48px;cursor:pointer;width:100%}
+button.ghost{background:transparent;color:var(--violet);border:2px solid var(--violet)}
+button.small{width:auto;min-height:40px;padding:8px 14px;font-size:.9rem}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,.tab:focus-visible{outline:3px solid var(--violet);outline-offset:2px}
+label{display:block;font-weight:700;font-size:.9rem;margin-bottom:6px}
+input[type=text],input[type=number]{width:100%;font:500 1.05rem var(--f-body);padding:12px 14px;min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.lots{display:grid;gap:8px}
+.lot{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;color:var(--ink);font:inherit;min-height:60px}
+.lot[aria-pressed=true]{border-color:var(--violet);background:var(--violet-soft)}
+.lot b{font:800 1.15rem var(--f-display)}
+.lot span{font-family:var(--f-mono);font-size:.86rem}
+.row{display:grid;gap:12px;margin-top:12px}
+.sum{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);margin-top:6px;font-weight:700}
+/* ventes */
+.list{display:grid;gap:8px;margin-top:10px;padding:0;list-style:none}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.item>div{min-width:0}
+.code{font:700 .95rem var(--f-mono);overflow-wrap:anywhere}
+.who{font-size:.84rem;color:var(--muted)}
+.chip{font:700 .74rem var(--f-mono);padding:4px 10px;border-radius:999px;white-space:nowrap}
+.c-sold{background:var(--violet-soft);color:var(--violet)}
+.c-used{background:var(--bad-soft);color:var(--bad)}
+.item.burnt{opacity:.7}
+.item.burnt .code{text-decoration:line-through}
+.empty{text-align:center;color:var(--muted);padding:28px 12px;border:2px dashed var(--line);border-radius:12px;margin-top:10px}
+/* scanner */
+.viewfinder{display:grid;place-items:center;aspect-ratio:1/1;max-width:100%;border-radius:16px;background:var(--night);color:#CFCFF0;text-align:center;padding:20px;font-size:.9rem;position:relative}
+.viewfinder::before,.viewfinder::after{content:"";position:absolute;width:44px;height:44px;border:4px solid #B9A8FF}
+.viewfinder::before{top:16px;left:16px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+.viewfinder::after{bottom:16px;right:16px;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.result{border-radius:16px;padding:22px 18px;text-align:center;margin-top:14px}
+.result h3{font-size:2rem;font-weight:800;letter-spacing:.02em}
+.result p{margin-top:6px}
+.r-ok{background:var(--ok-soft);color:var(--ok)}
+.r-bad{background:var(--bad-soft);color:var(--bad)}
+.r-ok p,.r-bad p{color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.result{animation:pop .18s ease-out}@keyframes pop{from{transform:scale(.96);opacity:.4}to{transform:none;opacity:1}}}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:8px max(16px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px))}
+nav>div{max-width:560px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+.tab{font:700 .9rem var(--f-body);background:transparent;color:var(--muted);border-radius:10px;padding:10px 6px;min-height:48px;border:0;width:auto}
+.tab[aria-selected=true]{background:var(--violet-soft);color:var(--violet)}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;width:auto;min-height:40px;font-weight:500;font-size:.85rem;padding:8px 0}
+input[type=password],select{width:100%;font:500 1.05rem var(--f-body);padding:12px 14px;min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+select:focus-visible,input[type=password]:focus-visible{outline:3px solid var(--violet);outline-offset:2px}
+.rolebtn{width:auto;min-height:36px;padding:6px 12px;font-size:.82rem;background:transparent;color:var(--on-night);border:1px solid #B9A8FF}
+.c-ok{background:var(--ok-soft);color:var(--ok)}
+.ib{width:100%;text-align:left;color:var(--ink);font:inherit;min-height:56px}
+.orow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+</style>
+
+<div class="bar"><div>
+  <div><div class="brand">PRO <span>EVENTS</span></div><div class="evt" id="evt">Espace organisateur</div></div>
+  <div style="display:flex;gap:8px;align-items:center"><button class="rolebtn" id="rolebtn" type="button">Admin</button></div>
+</div></div>
+
+<main class="app">
+  
+  <section id="v-home"></section>
+  <section id="v-sales" hidden></section>
+  <section id="v-scan" hidden></section>
+  <section id="v-adm" hidden></section>
+  <section id="v-login" hidden></section>
+  <section id="v-space" hidden></section>
+  <section id="v-buy" hidden></section>
+</main>
+
+<nav><div role="tablist" aria-label="Navigation">
+  <button class="tab" role="tab" data-v="home" aria-selected="true">Accueil</button>
+  <button class="tab" role="tab" data-v="sales" aria-selected="false">Ventes</button>
+  <button class="tab" role="tab" data-v="scan" aria-selected="false">Scanner</button>
+  <button class="tab" role="tab" data-v="space" aria-selected="false">Mon espace</button>
+</div></nav>
+
+<script>
+var KEY='proevents-demo-v2';
+var DEF=[[50,25000],[100,45000],[250,100000],[500,180000],[1000,320000]];
+function newOrg(id,name){return{id:id,name:name,event:'',price:5000,tickets:[],log:[],blocked:false}}
+function load(){var d=null;try{var r=localStorage.getItem(KEY);if(r)d=JSON.parse(r)}catch(e){}
+  if(!d||!d.orgs||!d.orgs.length||!d.offers||!d.offers.length){
+    d={offers:DEF.map(function(o){return o.slice()}),pin:'1234',nid:2,cur:1,orgs:[],purchases:[]};
+    var o1=newOrg(1,'Organisateur 1');
+    try{var old=localStorage.getItem('proevents-demo-v1');if(old){var s=JSON.parse(old);o1.event=s.event||'';o1.price=s.price||5000;o1.tickets=s.tickets||[];o1.log=s.log||[]}}catch(e){}
+    d.orgs.push(o1)}
+  return d}
+var D=load(),S,role='org',adminOK=false,view='home',pick=100,lastScan=null,selOrg=null,draft=null,delArm=false,pmsg='';
+function setCur(){S=D.orgs.filter(function(o){return o.id===D.cur})[0];if(!S){S=D.orgs[0];D.cur=S.id}}
+setCur();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' F'}
+function hm(t){return new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function code(){var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<6;i++)s+=a[Math.floor(Math.random()*a.length)];return 'PE-'+s}
+function cntOf(o){var c={bought:o.tickets.length,sold:0,used:0,left:0};o.tickets.forEach(function(t){if(t.status==='available')c.left++;else{c.sold++;if(t.status==='used')c.used++}});return c}
+function cnt(){return cntOf(S)}
+function fixPick(){if(!D.offers.some(function(o){return o[0]===pick}))pick=D.offers[0][0]}
+function blk(){return S.blocked?'<div class="banner" style="background:var(--bad-soft);color:var(--bad)">Votre compte est suspendu par l’administrateur : achat, vente et scan sont désactivés.</div>':''}
+function orgCard(){
+  var o=D.orgs.map(function(x){return'<option value="'+x.id+'"'+(x.id===S.id?' selected':'')+'>'+esc(x.name)+'</option>'}).join('');
+  return blk()+'<div class="card" style="margin-top:14px"><label for="osel">Organisateur</label><select id="osel">'+o+'<option value="new">+ Nouvel organisateur</option></select>'
+   +'<div style="margin-top:10px"><label for="oname">Nom de l’organisateur</label><input type="text" id="oname" value="'+esc(S.name)+'" autocomplete="off"></div>'
+   +'</div>';
+}
+function bindOrg(){
+  $('osel').onchange=function(){
+    if(this.value==='new'){var id=D.nid++;D.orgs.push(newOrg(id,'Organisateur '+(D.orgs.length+1)));D.cur=id}
+    else D.cur=+this.value;
+    setCur();lastScan=null;save();render()};
+  $('oname').oninput=function(){S.name=this.value.trim()||'Sans nom';save()};
+}
+
+
+function home(){
+  fixPick();var c=cnt(),h=orgCard();
+  if(S.event)$('evt').textContent=S.event;
+  if(c.bought){
+    var pu=c.used/c.bought*100,ps=(c.sold-c.used)/c.bought*100;
+    h+='<div class="stats">'
+     +'<div class="stat"><b>'+c.bought+'</b><span>Billets achetés</span></div>'
+     +'<div class="stat hi"><b>'+c.sold+'</b><span>Billets vendus</span></div>'
+     +'<div class="stat"><b>'+c.left+'</b><span>Restants à vendre</span></div>'
+     +'<div class="stat hi"><b>'+c.used+'</b><span>Scannés à l’entrée</span></div></div>'
+     +'<div class="card" style="margin-top:10px"><div class="muted" style="font-size:.85rem">Recettes</div><b style="font:800 1.6rem var(--f-display)">'+fmt(c.sold*S.price)+'</b>'
+     +'<div class="progress" role="img" aria-label="'+c.used+' scannés, '+(c.sold-c.used)+' vendus non scannés, '+c.left+' restants"><i class="p-used" style="width:'+pu+'%"></i><i class="p-sold" style="width:'+ps+'%"></i></div>'
+     +'<div class="pl"><span>Scannés <b>'+c.used+'</b></span><span>Vendus non scannés <b>'+(c.sold-c.used)+'</b></span><span>Restants <b>'+c.left+'</b></span></div>'
+     +'<p class="muted" style="font-size:.8rem;margin-top:8px">Un billet scanné reste compté comme vendu.</p></div>';
+  }
+  h+='<h2>'+(c.bought?'Acheter un autre lot':'Acheter votre lot de billets')+'</h2>';
+  h+='<div class="card"><div class="row" style="margin-top:0">'
+   +'<div><label for="ev">Nom de l’événement</label><input type="text" id="ev" value="'+esc(S.event)+'" placeholder="Ex. Soirée de lancement" autocomplete="off"></div>'
+   +'<div><label for="pr">Prix de vente d’un billet (F CFA)</label><input type="number" id="pr" value="'+S.price+'" min="0" step="500" inputmode="numeric"></div>'
+   +'<div><label>Taille du lot</label><div class="lots">'
+   +D.offers.map(function(o){return'<button type="button" class="lot" data-q="'+o[0]+'" aria-pressed="'+(o[0]===pick)+'"><b>'+o[0]+' billets</b><span>'+fmt(o[1])+'</span></button>'}).join('')
+   +'</div><p class="muted" style="font-size:.78rem;margin-top:6px">Prix fixés par l’administrateur.</p></div>'
+   +'<div class="sum"><span>Total à payer</span><span id="tot"></span></div>'
+   +'<button type="button" id="buy"'+(S.blocked?' disabled':'')+'>Payer le lot</button></div></div>';
+  if(c.bought)h+='<p style="text-align:center;margin-top:16px"><button class="link" id="reset" type="button">Réinitialiser mes billets</button></p>';
+  $('v-home').innerHTML=h; tot();
+  document.querySelectorAll('.lot').forEach(function(b){b.onclick=function(){pick=+b.dataset.q;home()}});
+  $('buy').onclick=buy;bindOrg();
+  var r=$('reset');if(r)r.onclick=function(){S.event='';S.price=5000;S.tickets=[];S.log=[];lastScan=null;save();$('evt').textContent='Espace organisateur';render()};
+}
+function tot(){var o=D.offers.filter(function(x){return x[0]===pick})[0];$('tot').textContent=fmt(o[1])}
+function buy(){
+  if(S.blocked)return;
+  var name=$('ev').value.trim(),price=parseInt($('pr').value,10);
+  if(!name){$('ev').focus();$('ev').placeholder='Entrez le nom de l’événement';return}
+  S.event=name;S.price=isNaN(price)?0:price;
+  var used={};S.tickets.forEach(function(t){used[t.code]=1});
+  for(var i=0;i<pick;i++){var c;do{c=code()}while(used[c]);used[c]=1;S.tickets.push({code:c,status:'available'})}
+  var o=D.offers.filter(function(x){return x[0]===pick})[0];
+  D.purchases.unshift({org:S.id,name:S.name,event:name,qty:pick,amount:o[1],t:Date.now()});
+  save();render();
+}
+
+function sales(){
+  var c=cnt(),h=blk()+'<h2>Ventes</h2>';
+  if(!c.bought){$('v-sales').innerHTML=h+'<div class="empty">Achetez d’abord un lot sur l’onglet Accueil.</div>';return}
+  h+='<div class="card"><p><b>'+c.sold+'</b> vendus sur '+c.bought+'. Il reste <b>'+c.left+'</b> billets à vendre.</p>'
+   +'<div class="row"><div><label for="by">Nom de l’acheteur (facultatif)</label><input type="text" id="by" autocomplete="off" placeholder="Ex. Awa Diop"></div>'
+   +'<button type="button" id="sell"'+(c.left&&!S.blocked?'':' disabled')+'>Ajouter une vente</button></div>'
+   +'<div class="row"><div><label for="ord">Commande reçue d’un spectateur</label><input type="text" id="ord" placeholder="Collez le message reçu sur WhatsApp" autocomplete="off"></div><button type="button" class="ghost" id="ordok">Lire la commande</button><div id="ordres"></div><button type="button" class="ghost" id="pdfleft">Billets restants en PDF</button></div></div>'+orderCard();
+  var sold=S.tickets.filter(function(t){return t.status!=='available'});
+  sold.sort(function(a,b){return (b.soldAt||0)-(a.soldAt||0)});
+  if(!sold.length)h+='<div class="empty">Aucune vente pour le moment.</div>';
+  else h+='<ul class="list">'+sold.map(function(t){
+    var u=t.status==='used';
+    return'<li class="item'+(u?' burnt':'')+'"><div><div class="code">'+t.code+'</div><div class="who">'+esc(t.buyer||'Acheteur')+' · vendu à '+hm(t.soldAt)+'</div></div>'
+     +'<div style="display:flex;gap:6px;align-items:center"><span class="chip '+(u?'c-used':'c-sold')+'">'+(u?'GRILLÉ '+hm(t.usedAt).slice(0,5):'VENDU')+'</span><button type="button" class="ghost small" data-pdf="'+t.code+'">PDF</button></div></li>'}).join('')+'</ul>';
+  $('v-sales').innerHTML=h;
+  bindSales();var b=$('sell');if(b)b.onclick=function(){
+    var t=S.tickets.filter(function(x){return x.status==='available'})[0];if(!t||S.blocked)return;
+    t.status='sold';t.soldAt=Date.now();t.buyer=$('by').value.trim();save();sales()};
+}
+
+function scan(){
+  var c=cnt(),h=blk()+'<h2>Scanner à l’entrée</h2>';
+  h+='<div class="viewfinder"><video id="vid" playsinline muted hidden style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:16px"></video><div><div id="vmsg">Ouvrez la caméra pour scanner le QR code du billet, ou saisissez le code.</div><button type="button" id="cam" class="small" style="margin-top:12px">Ouvrir la caméra</button></div></div>'
+   +'<div class="row"><div><label for="cd">Code du billet</label><input type="text" id="cd" placeholder="PE-XXXXXX" autocapitalize="characters" autocomplete="off" autocorrect="off"></div>'
+   +'<button type="button" id="go"'+(S.blocked?' disabled':'')+'>Valider le billet</button></div>';
+  if(lastScan){
+    var s=lastScan;
+    if(s.ok)h+='<div class="result r-ok" role="status"><h3>VALIDE</h3><p><b>'+s.code+'</b></p><p>Billet maintenant grillé. Entrée autorisée.</p></div>';
+    else h+='<div class="result r-bad" role="alert"><h3>'+esc(s.title)+'</h3><p>'+esc(s.msg)+'</p></div>';
+  }
+  var sold=S.tickets.filter(function(t){return t.status==='sold'}).slice(0,4);
+  if(sold.length){h+='<h2>Billets à tester</h2><p class="muted" style="font-size:.85rem">Touchez un billet vendu pour remplir le code.</p><ul class="list">'
+    +sold.map(function(t){return'<li><button type="button" class="item pick" data-c="'+t.code+'" style="width:100%;text-align:left;color:var(--ink);font:inherit;min-height:56px"><span class="code">'+t.code+'</span><span class="chip c-sold">VENDU</span></button></li>'}).join('')+'</ul>'}
+  h+='<h2>Derniers scans</h2>';
+  if(!S.log.length)h+='<div class="empty">Aucun scan pour le moment.</div>';
+  else h+='<ul class="list">'+S.log.slice(0,8).map(function(l){
+    return'<li class="item"><div><div class="code">'+esc(l.code)+'</div><div class="who">'+hm(l.t)+'</div></div><span class="chip '+(l.ok?'c-sold':'c-used')+'">'+esc(l.label)+'</span></li>'}).join('')+'</ul>';
+  $('v-scan').innerHTML=h;
+  $('go').onclick=doScan;$('cam').onclick=camStart;
+  $('cd').onkeydown=function(e){if(e.key==='Enter')doScan()};
+  document.querySelectorAll('.pick').forEach(function(b){b.onclick=function(){$('cd').value=b.dataset.c;$('cd').focus()}});
+}
+function doScan(){
+  if(S.blocked)return;
+  var v=$('cd').value.trim().toUpperCase();if(!v){$('cd').focus();return}
+  var t=S.tickets.filter(function(x){return x.code===v})[0],now=Date.now();
+  if(!t){lastScan={ok:false,title:'NON RECONNU',msg:'Ce code n’existe pas pour cet événement.'};log(v,false,'NON RECONNU',now)}
+  else if(t.status==='used'){lastScan={ok:false,title:'BILLET DÉJÀ UTILISÉ',msg:'Premier scan à '+hm(t.usedAt)+'. Entrée refusée.'};log(v,false,'DÉJÀ UTILISÉ',now)}
+  else if(t.status==='available'){lastScan={ok:false,title:'NON VENDU',msg:'Ce billet n’a pas été vendu. Entrée refusée.'};log(v,false,'NON VENDU',now)}
+  else{t.status='used';t.usedAt=now;lastScan={ok:true,code:v};log(v,true,'VALIDE',now)}
+  save();scan();$('cd').focus();
+}
+function log(c,ok,label,t){S.log.unshift({code:c,ok:ok,label:label,t:t});S.log=S.log.slice(0,50)}
+
+/* ===== Administrateur ===== */
+var TABS={org:[['home','Accueil'],['sales','Ventes'],['scan','Scanner'],['space','Mon espace']],admin:[['a-over','Vue d’ensemble'],['a-orgs','Organisateurs'],['a-prices','Prix']]};
+function dt(t){return new Date(t).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+function st(n,l,hi){return'<div class="stat'+(hi?' hi':'')+'"><b>'+n+'</b><span>'+l+'</span></div>'}
+function orgById(id){return D.orgs.filter(function(o){return o.id===id})[0]}
+
+function login(){
+  $('v-login').innerHTML='<h2>Accès administrateur</h2><div class="card"><label for="pin">Code administrateur</label><input type="password" id="pin" inputmode="numeric" autocomplete="off" placeholder="••••">'
+   +'<p class="muted" style="font-size:.78rem;margin-top:8px">Vous pouvez changer ce code dans l’onglet Prix.</p>'
+   +'<div class="row"><button type="button" id="pinok">Entrer</button></div><p id="pine" class="who" role="alert" style="color:var(--bad);margin-top:8px"></p></div>';
+  function go(){if($('pin').value===D.pin){adminOK=true;view='a-over';render()}else{$('pine').textContent='Code incorrect.';$('pin').value='';$('pin').focus()}}
+  $('pinok').onclick=go;$('pin').onkeydown=function(e){if(e.key==='Enter')go()};
+}
+
+function admin(){if(view==='a-over')aOver();else if(view==='a-orgs')selOrg&&orgById(selOrg)?aOrg():aOrgs();else aPrices()}
+
+function aOver(){
+  var T={b:0,s:0,u:0,rev:0},pf=0;
+  D.orgs.forEach(function(o){var c=cntOf(o);T.b+=c.bought;T.s+=c.sold;T.u+=c.used;T.rev+=c.sold*o.price});
+  D.purchases.forEach(function(p){pf+=p.amount});
+  var h='<h2>Vue d’ensemble</h2><div class="stats" style="margin-top:0">'+st(D.orgs.length,'Organisateurs')+st(T.b,'Billets achetés')+st(T.s,'Billets vendus',1)+st(T.u,'Scannés à l’entrée',1)+'</div>'
+   +'<div class="card" style="margin-top:10px"><div class="muted" style="font-size:.85rem">Revenus de la plateforme (lots achetés)</div><b style="font:800 1.6rem var(--f-display)">'+fmt(pf)+'</b></div>'
+   +'<div class="card" style="margin-top:10px"><div class="muted" style="font-size:.85rem">Recettes billetterie des organisateurs</div><b style="font:800 1.6rem var(--f-display)">'+fmt(T.rev)+'</b></div>';
+  h+='<h2>Achats de lots récents</h2>';
+  if(!D.purchases.length)h+='<div class="empty">Aucun achat de lot pour le moment.</div>';
+  else h+='<ul class="list">'+D.purchases.slice(0,8).map(function(p){return'<li class="item"><div><div class="code">'+p.qty+' billets · '+fmt(p.amount)+'</div><div class="who">'+esc(p.name)+' · '+esc(p.event||'Sans événement')+' · '+dt(p.t)+'</div></div></li>'}).join('')+'</ul>';
+  var L=[];D.orgs.forEach(function(o){o.log.forEach(function(l){L.push({o:o.name,l:l})})});L.sort(function(a,b){return b.l.t-a.l.t});
+  h+='<h2>Derniers scans</h2>';
+  if(!L.length)h+='<div class="empty">Aucun scan pour le moment.</div>';
+  else h+='<ul class="list">'+L.slice(0,8).map(function(x){return'<li class="item"><div><div class="code">'+esc(x.l.code)+'</div><div class="who">'+esc(x.o)+' · '+dt(x.l.t)+'</div></div><span class="chip '+(x.l.ok?'c-sold':'c-used')+'">'+esc(x.l.label)+'</span></li>'}).join('')+'</ul>';
+  $('v-adm').innerHTML=h;
+}
+
+function aOrgs(){
+  var h='<h2>Organisateurs</h2><div class="card"><label for="nn">Ajouter un organisateur</label><div class="row" style="margin-top:0"><input type="text" id="nn" placeholder="Nom de l’organisateur" autocomplete="off"><button type="button" id="nadd">Ajouter</button></div></div>'
+   +'<ul class="list">'+D.orgs.map(function(o){var c=cntOf(o);
+     return'<li><button type="button" class="item ib" data-id="'+o.id+'"><div><div class="code">'+esc(o.name)+'</div><div class="who">'+esc(o.event||'Sans événement')+' · '+c.sold+'/'+c.bought+' vendus</div></div><span class="chip '+(o.blocked?'c-used':'c-ok')+'">'+(o.blocked?'SUSPENDU':'ACTIF')+'</span></button></li>'}).join('')+'</ul>';
+  $('v-adm').innerHTML=h;
+  $('nadd').onclick=function(){var n=$('nn').value.trim();if(!n){$('nn').focus();return}D.orgs.push(newOrg(D.nid++,n));save();aOrgs()};
+  document.querySelectorAll('.ib').forEach(function(b){b.onclick=function(){selOrg=+b.dataset.id;delArm=false;window.scrollTo(0,0);aOrg()}});
+}
+
+function aOrg(){
+  var o=orgById(selOrg);if(!o){selOrg=null;aOrgs();return}
+  var c=cntOf(o);
+  var h='<p style="margin-top:14px"><button class="link" id="back" type="button">← Tous les organisateurs</button></p><h2 style="margin-top:0">'+esc(o.name)+'</h2>'
+   +(o.blocked?'<div class="banner" style="background:var(--bad-soft);color:var(--bad)">Compte suspendu.</div>':'')
+   +'<div class="stats">'+st(c.bought,'Billets achetés')+st(c.sold,'Billets vendus',1)+st(c.left,'Restants')+st(c.used,'Scannés',1)+'</div>'
+   +'<div class="card" style="margin-top:10px"><div class="muted" style="font-size:.85rem">Recettes</div><b style="font:800 1.6rem var(--f-display)">'+fmt(c.sold*o.price)+'</b></div>'
+   +'<h2>Réglages</h2><div class="card"><div class="row" style="margin-top:0">'
+   +'<div><label for="an">Nom</label><input type="text" id="an" value="'+esc(o.name)+'" autocomplete="off"></div>'
+   +'<div><label for="ae">Événement</label><input type="text" id="ae" value="'+esc(o.event)+'" autocomplete="off"></div>'
+   +'<div><label for="ap">Prix du billet (F CFA)</label><input type="number" id="ap" value="'+o.price+'" min="0" step="500" inputmode="numeric"></div>'
+   +'<button type="button" id="asave">Enregistrer</button>'
+   +'<button type="button" class="ghost" id="ablock">'+(o.blocked?'Réactiver le compte':'Suspendre le compte')+'</button>'
+   +'<button type="button" class="ghost" id="adel" style="color:var(--bad);border-color:var(--bad)">Supprimer l’organisateur</button></div></div>';
+  var sold=o.tickets.filter(function(t){return t.status!=='available'});
+  sold.sort(function(a,b){return (b.soldAt||0)-(a.soldAt||0)});
+  h+='<h2>Billets vendus</h2>';
+  if(!sold.length)h+='<div class="empty">Aucun billet vendu.</div>';
+  else h+='<ul class="list">'+sold.map(function(t){var u=t.status==='used';
+    return'<li class="item'+(u?' burnt':'')+'"><div><div class="code">'+t.code+'</div><div class="who">'+esc(t.buyer||'Acheteur')+' · '+dt(t.soldAt)+'</div></div>'
+     +'<div style="display:flex;gap:6px;align-items:center"><span class="chip '+(u?'c-used':'c-sold')+'">'+(u?'GRILLÉ':'VENDU')+'</span>'
+     +'<button type="button" class="ghost small" data-tk="'+t.code+'">'+(u?'Dégriller':'Annuler')+'</button></div></li>'}).join('')+'</ul>';
+  $('v-adm').innerHTML=h;
+  $('back').onclick=function(){selOrg=null;delArm=false;aOrgs()};
+  $('asave').onclick=function(){o.name=$('an').value.trim()||o.name;o.event=$('ae').value.trim();var p=parseInt($('ap').value,10);if(!isNaN(p)&&p>=0)o.price=p;save();aOrg()};
+  $('ablock').onclick=function(){o.blocked=!o.blocked;save();aOrg()};
+  $('adel').onclick=function(){
+    if(!delArm){delArm=true;this.textContent='Toucher encore pour confirmer la suppression';return}
+    D.orgs=D.orgs.filter(function(x){return x!==o});
+    if(!D.orgs.length)D.orgs.push(newOrg(D.nid++,'Organisateur 1'));
+    setCur();selOrg=null;delArm=false;lastScan=null;save();aOrgs()};
+  document.querySelectorAll('[data-tk]').forEach(function(b){b.onclick=function(){
+    var t=o.tickets.filter(function(x){return x.code===b.dataset.tk})[0];if(!t)return;
+    if(t.status==='used'){t.status='sold';delete t.usedAt}
+    else if(t.status==='sold'){t.status='available';delete t.soldAt;delete t.buyer}
+    save();aOrg()}});
+}
+
+function readDraft(){draft=draft.map(function(o,i){var q=parseInt($('q'+i).value,10),p=parseInt($('p'+i).value,10);return[isNaN(q)?'':q,isNaN(p)?'':p]})}
+function aPrices(){
+  if(!draft)draft=D.offers.map(function(o){return o.slice()});
+  var good=pmsg.indexOf('enregistrés')>-1;
+  var h='<h2>Prix des lots</h2><div class="card"><p class="muted" style="font-size:.85rem">C’est ce que chaque organisateur paie pour acheter un lot. Les prix s’appliquent à tous, dès l’enregistrement.</p><div class="row">'
+   +draft.map(function(o,i){return'<div><div class="orow"><div><label for="q'+i+'">Billets</label><input type="number" id="q'+i+'" value="'+o[0]+'" min="1" inputmode="numeric"></div>'
+     +'<div><label for="p'+i+'">Prix (F CFA)</label><input type="number" id="p'+i+'" value="'+o[1]+'" min="0" step="500" inputmode="numeric"></div>'
+     +'<button type="button" class="ghost small" data-del="'+i+'" aria-label="Supprimer le lot de '+o[0]+' billets"'+(draft.length<2?' disabled':'')+'>✕</button></div>'
+     +'<div class="who" style="margin-top:4px">≈ '+fmt(o[0]?Math.round(o[1]/o[0]):0)+' par billet</div></div>'}).join('')
+   +'</div><div class="row"><button type="button" class="ghost" id="padd">Ajouter un lot</button><button type="button" id="psave">Enregistrer les prix</button></div>'
+   +'<p class="who" role="status" style="margin-top:8px;font-weight:700;color:'+(good?'var(--ok)':'var(--bad)')+'">'+esc(pmsg)+'</p></div>'
+   +'<h2>Sécurité</h2><div class="card"><label for="np">Nouveau code administrateur</label><input type="password" id="np" inputmode="numeric" autocomplete="off" placeholder="4 chiffres ou plus">'
+   +'<div class="row"><button type="button" class="ghost" id="pin2">Changer le code</button></div><p id="smsg" class="who" role="status" style="margin-top:8px;font-weight:700"></p></div>';
+  $('v-adm').innerHTML=h;
+  document.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){readDraft();draft.splice(+b.dataset.del,1);pmsg='';aPrices()}});
+  $('padd').onclick=function(){readDraft();draft.push(['','']);pmsg='';aPrices()};
+  $('psave').onclick=function(){
+    readDraft();var seen={},msg='';
+    draft.forEach(function(o){
+      if(typeof o[0]!=='number'||o[0]<1||typeof o[1]!=='number'||o[1]<0)msg='Chaque lot doit avoir au moins 1 billet et un prix valide.';
+      else if(seen[o[0]])msg='Deux lots ont le même nombre de billets.';
+      seen[o[0]]=1});
+    if(msg){pmsg=msg;aPrices();return}
+    D.offers=draft.map(function(o){return o.slice()}).sort(function(a,b){return a[0]-b[0]});
+    draft=null;pmsg='Prix enregistrés.';fixPick();save();aPrices()};
+  $('pin2').onclick=function(){var v=$('np').value.trim(),m=$('smsg');
+    if(!/^[0-9]{4,}$/.test(v)){m.style.color='var(--bad)';m.textContent='Le code doit contenir au moins 4 chiffres.';return}
+    D.pin=v;save();$('np').value='';m.style.color='var(--ok)';m.textContent='Code modifié.'};
+}
+
+/* ===== Billets PDF, scan caméra, lien de vente, espace organisateur ===== */
+function b64(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function db64(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))}
+var BUY=null,lastOrder=null,stream=null,camOn=false;
+(function(){var h=location.hash;if(h.indexOf('#b-')===0){try{BUY=JSON.parse(db64(h.slice(3)))}catch(e){}}})();
+function digits(s){return String(s||'').replace(/\D/g,'')}
+function shareLink(){return location.href.split('#')[0]+'#b-'+b64(JSON.stringify({n:S.event,p:S.price,t:S.phone||'',l:S.link||''}))}
+function qrPng(c){var q=qrcode(0,'M');q.addData(c);q.make();var n=q.getModuleCount(),s=8,cv=document.createElement('canvas');cv.width=cv.height=(n+8)*s;
+  var x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);x.fillStyle='#000';
+  for(var r=0;r<n;r++)for(var k=0;k<n;k++)if(q.isDark(r,k))x.fillRect((k+4)*s,(r+4)*s,s,s);return cv.toDataURL('image/png')}
+async function makePdf(codes){
+  if(!window.jspdf||typeof qrcode==='undefined'){alert('Le générateur de PDF n’est pas chargé. Vérifiez la connexion et réessayez.');return}
+  var W=150,H=70,doc=new window.jspdf.jsPDF({unit:'mm',orientation:'landscape',format:[H,W]});
+  codes.forEach(function(c,i){
+    var t=S.tickets.filter(function(x){return x.code===c})[0]||{};
+    if(i)doc.addPage([H,W],'landscape');
+    doc.setDrawColor(107,63,239);doc.setLineWidth(1);doc.rect(4,4,W-8,H-8);
+    doc.setTextColor(14,18,54);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('PRO EVENTS',10,14);
+    doc.setFontSize(17);doc.text(doc.splitTextToSize(S.event||'Événement',72),10,26);
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text('Billet d’entrée · '+fmt(S.price),10,46);
+    if(t.buyer)doc.text(String(t.buyer),10,52);
+    doc.setFont('courier','bold');doc.setFontSize(14);doc.text(c,10,60);
+    doc.addImage(qrPng(c),'PNG',88,9,52,52);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.text('Un seul passage. Présentez ce QR code à l’entrée.',88,64);
+  });
+  try{var d=await claude.use('downloads');if(!d){alert('Téléchargement indisponible ici.');return}
+    await d.save({filename:(S.event||'billets').replace(/[^a-z0-9]+/gi,'-')+'.pdf',data:doc.output('blob')})}catch(e){}
+}
+function camStop(){camOn=false;if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null}}
+async function camStart(){
+  if(typeof jsQR==='undefined'){$('vmsg').textContent='Scanner indisponible : saisissez le code.';return}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})}catch(e){$('vmsg').textContent='Caméra non autorisée : saisissez le code du billet.';return}
+  var v=$('vid');v.srcObject=stream;v.hidden=false;await v.play();$('cam').hidden=true;$('vmsg').hidden=true;camOn=true;
+  var cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+  (function tick(){if(!camOn)return;
+    if(v.videoWidth){cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);
+      var r=jsQR(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);
+      if(r&&r.data){camStop();$('cd').value=r.data.trim().toUpperCase();doScan();return}}
+    requestAnimationFrame(tick)})();
+}
+function orderCard(){
+  if(!lastOrder)return'';
+  return'<div class="card" style="margin-top:10px"><b>'+esc(lastOrder.name)+'</b><p class="who">'+lastOrder.codes.length+' billet(s) créé(s) : '+lastOrder.codes.join(', ')+'</p>'
+   +'<div class="row"><button type="button" id="ordpdf">Télécharger les billets (PDF)</button>'
+   +(digits(lastOrder.phone)?'<a class="btn" style="display:block;text-align:center;text-decoration:none;background:var(--ok);color:#fff" target="_blank" rel="noopener" href="https://wa.me/'+digits(lastOrder.phone)+'?text='+encodeURIComponent('Votre paiement est confirmé pour '+S.event+'. Voici vos billets (PDF) : présentez le QR code à l’entrée.')+'">Écrire au client sur WhatsApp</a>':'')+'</div></div>';
+}
+function bindSales(){
+  var po=$('ordpdf');if(po)po.onclick=function(){makePdf(lastOrder.codes)};
+  var pl=$('pdfleft');if(pl)pl.onclick=function(){makePdf(S.tickets.filter(function(t){return t.status==='available'}).map(function(t){return t.code}))};
+  document.querySelectorAll('[data-pdf]').forEach(function(b){b.onclick=function(){makePdf([b.dataset.pdf])}});
+  $('ordok').onclick=function(){
+    var m=/PE-CMD:([A-Za-z0-9_-]+)/.exec($('ord').value),o=null;
+    try{o=JSON.parse(db64(m[1]))}catch(e){}
+    if(!o||!o.q){$('ordres').innerHTML='<p class="who" style="color:var(--bad)">Commande illisible. Collez le message reçu en entier.</p>';return}
+    var left=cnt().left;
+    $('ordres').innerHTML='<div class="card" style="margin-top:10px;background:var(--bg)"><b>'+esc(o.a)+'</b> · '+esc(o.t)+'<p class="who">'+o.q+' billet(s) · '+fmt(o.q*S.price)+' · Réf. paiement : '+esc(o.r)+'</p>'
+     +'<p class="who">Vérifiez que le paiement est bien arrivé sur votre compte Wave ou Orange Money.</p>'
+     +'<div class="row"><button type="button" id="ordgo"'+(left>=o.q&&!S.blocked?'':' disabled')+'>Paiement reçu : créer les billets</button></div>'+(left<o.q?'<p class="who" style="color:var(--bad)">Il ne reste que '+left+' billets.</p>':'')+'</div>';
+    $('ordgo').onclick=function(){
+      var av=S.tickets.filter(function(t){return t.status==='available'}).slice(0,o.q),now=Date.now();
+      av.forEach(function(t){t.status='sold';t.soldAt=now;t.buyer=o.a;t.phone=o.t;t.ref=o.r});
+      lastOrder={codes:av.map(function(t){return t.code}),name:o.a,phone:o.t};save();sales()};
+  };
+}
+function space(){
+  var ok=S.event&&S.price>0;
+  $('v-space').innerHTML=blk()+'<h2>Mon espace</h2><div class="card"><div class="row" style="margin-top:0">'
+   +'<div><label for="sp">Numéro qui reçoit mes ventes (Wave / Orange Money)</label><input type="text" id="sp" value="'+esc(S.phone||'')+'" placeholder="+221 77 000 00 00" inputmode="tel" autocomplete="off"></div>'
+   +'<div><label for="sk">Mon lien de paiement (Wave ou Orange Money)</label><input type="text" id="sk" value="'+esc(S.link||'')+'" placeholder="https://pay.wave.com/m/..." autocomplete="off" autocapitalize="off"></div></div></div>'
+   +'<h2>Lien de vente en ligne</h2><div class="card">'+(ok?'<p class="muted" style="font-size:.85rem">Envoyez ce lien à vos spectateurs : ils choisissent leurs billets, vous paient, puis vous envoient leur commande sur WhatsApp. Vous validez et leur envoyez leurs billets PDF.</p>'
+   +'<div class="row"><input type="text" id="sl" readonly value=""><button type="button" id="scopy">Copier le lien</button>'
+   +'<a class="btn" id="swa" style="display:block;text-align:center;text-decoration:none;background:var(--ok);color:#fff" target="_blank" rel="noopener" href="#">Partager sur WhatsApp</a></div>'
+   :'<p class="muted">Renseignez d’abord le nom de l’événement et le prix du billet dans l’onglet Accueil.</p>')+'</div>';
+  function upd(){if(!ok)return;var l=shareLink();$('sl').value=l;$('swa').href='https://wa.me/?text='+encodeURIComponent('Achetez vos billets pour '+S.event+' : '+l)}
+  $('sp').oninput=function(){S.phone=this.value.trim();save();upd()};
+  $('sk').oninput=function(){S.link=this.value.trim();save();upd()};
+  if(ok){upd();$('scopy').onclick=function(){try{navigator.clipboard.writeText($('sl').value).catch(function(){})}catch(e){}$('sl').select();try{document.execCommand('copy')}catch(e){}this.textContent='Lien copié'}}
+}
+var bq=1;
+function buyer(){
+  var n=BUY.n||'Événement',h='<h2>'+esc(n)+'</h2><div class="card"><div class="muted" style="font-size:.85rem">Prix d’un billet</div><b style="font:800 1.6rem var(--f-display)">'+fmt(BUY.p)+'</b>'
+   +'<div class="row"><div><label for="bqt">Nombre de billets</label><input type="number" id="bqt" value="'+bq+'" min="1" max="20" inputmode="numeric"></div></div>'
+   +'<div class="sum"><span>Total à payer</span><span id="btot"></span></div></div>'
+   +'<h2>1. Payez l’organisateur</h2><div class="card"><div class="row" style="margin-top:0">'
+   +(BUY.l?'<a class="btn" style="display:block;text-align:center;text-decoration:none" target="_blank" rel="noopener" href="'+esc(BUY.l)+'">Payer avec Wave / Orange Money</a>':'')
+   +(BUY.t?'<p>Ou envoyez le montant par Wave ou Orange Money au <b>'+esc(BUY.t)+'</b>.</p>':'')
+   +(!BUY.l&&!BUY.t?'<p class="muted">L’organisateur n’a pas encore indiqué de moyen de paiement.</p>':'')+'</div></div>'
+   +'<h2>2. Confirmez votre paiement</h2><div class="card"><div class="row" style="margin-top:0">'
+   +'<div><label for="ba">Votre nom</label><input type="text" id="ba" autocomplete="name"></div>'
+   +'<div><label for="bt">Votre numéro (WhatsApp)</label><input type="text" id="bt" inputmode="tel" autocomplete="tel"></div>'
+   +'<div><label for="br">Référence du paiement (reçue par SMS)</label><input type="text" id="br" autocomplete="off"></div>'
+   +'<button type="button" id="bsend">Envoyer ma commande</button></div><div id="bres"></div></div>'
+   +'<p class="muted" style="font-size:.8rem;margin-top:12px">Vos billets PDF vous sont envoyés par l’organisateur dès qu’il a reçu votre paiement.</p>';
+  $('v-buy').innerHTML=h;
+  function tt(){bq=Math.max(1,Math.min(20,parseInt($('bqt').value,10)||1));$('btot').textContent=fmt(bq*BUY.p)}
+  tt();$('bqt').oninput=tt;
+  $('bsend').onclick=function(){
+    var a=$('ba').value.trim(),t=$('bt').value.trim(),r=$('br').value.trim();
+    if(!a||!t||!r){$('bres').innerHTML='<p class="who" style="color:var(--bad);margin-top:8px">Remplissez votre nom, votre numéro et la référence du paiement.</p>';return}
+    tt();var msg='Commande billets '+n+'\nPE-CMD:'+b64(JSON.stringify({a:a,t:t,r:r,q:bq}));
+    $('bres').innerHTML='<div style="margin-top:12px">'+(digits(BUY.t)?'<a class="btn" style="display:block;text-align:center;text-decoration:none;background:var(--ok);color:#fff" target="_blank" rel="noopener" href="https://wa.me/'+digits(BUY.t)+'?text='+encodeURIComponent(msg)+'">Envoyer la commande sur WhatsApp</a>':'<p class="who">Envoyez ce message à l’organisateur :</p>')
+     +'<input type="text" readonly value="'+esc(msg.split('\n')[1])+'" style="margin-top:8px"></div>'};
+}
+
+function render(){
+  camStop();
+  if(BUY){['home','sales','scan','adm','login','space'].forEach(function(k){$('v-'+k).hidden=true});$('v-buy').hidden=false;
+    document.querySelector('nav').hidden=true;$('rolebtn').hidden=true;$('evt').textContent='Billetterie en ligne';buyer();return}
+  var adm=role==='admin',lock=adm&&!adminOK;
+  document.querySelectorAll('.tab').forEach(function(b,i){var t=TABS[role][i];b.hidden=!t;if(!t)return;b.dataset.v=t[0];b.textContent=t[1];b.setAttribute('aria-selected',t[0]===view)});
+  $('evt').textContent=adm?'Espace administrateur':(S.event||'Espace organisateur');
+  $('rolebtn').textContent=adm?'Quitter l’admin':'Admin';
+  ['home','sales','scan','adm','login','space','buy'].forEach(function(k){$('v-'+k).hidden=true});
+  document.querySelector('nav').hidden=lock;
+  if(lock){$('v-login').hidden=false;login();return}
+  if(adm){$('v-adm').hidden=false;admin();return}
+  $('v-'+view).hidden=false;
+  if(view==='home')home();else if(view==='sales')sales();else if(view==='space')space();else scan();
+}
+document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){
+  view=b.dataset.v;selOrg=null;draft=null;delArm=false;pmsg='';
+  window.scrollTo(0,0);render()}});
+$('rolebtn').onclick=function(){
+  role=role==='admin'?'org':'admin';adminOK=false;view=role==='admin'?'a-over':'home';
+  selOrg=null;draft=null;delArm=false;pmsg='';lastScan=null;window.scrollTo(0,0);render()};
+render();
+</script>
+
+</body></html>
